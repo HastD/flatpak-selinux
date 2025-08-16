@@ -15,6 +15,9 @@ application_type(flatpak_exec_t)
 
 allow flatpak_domain self:user_namespace create;
 allow flatpak_domain self:socket_class_set create_socket_perms;
+# This grants capabilities only inside the user namespaces managed by flatpak;
+# flatpak itself still runs as an unprivileged user process. See the section on
+# capabilities in user_namespace(7) for details.
 allow flatpak_domain self:cap_userns { dac_override dac_read_search net_admin setgid setpcap setuid sys_admin sys_chroot sys_ptrace sys_resource };
 allow flatpak_domain self:process { ptrace setcap setsched };
 allow flatpak_domain self:netlink_route_socket nlmsg_write;
