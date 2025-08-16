@@ -176,9 +176,13 @@ manage_files_pattern(flatpak_domain, flatpak_cache_home_t, flatpak_cache_home_t)
 manage_lnk_files_pattern(flatpak_domain, flatpak_cache_home_t, flatpak_cache_home_t)
 
 # Flatpak app runtime/cache files
+type var_home_t;
+userdom_user_home_content(var_home_t)
+userdom_user_home_dir_filetrans(domain, var_home_t, dir, ".var")
+
 type flatpak_var_home_t, flatpak_app_exec_type, flatpak_generic_app_exec_type;
 userdom_user_home_content(flatpak_var_home_t)
-userdom_user_home_dir_filetrans(flatpak_domain, flatpak_var_home_t, dir, ".var")
+filetrans_pattern(flatpak_domain, var_home_t, flatpak_var_home_t, dir, "app")
 
 manage_dirs_pattern(flatpak_domain, flatpak_var_home_t, flatpak_var_home_t)
 manage_files_pattern(flatpak_domain, flatpak_var_home_t, flatpak_var_home_t)
