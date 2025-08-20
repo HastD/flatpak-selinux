@@ -150,8 +150,6 @@ userdom_use_user_terminals(flatpak_domain)
 userdom_user_home_dir_filetrans(domain, var_home_t, dir, ".var")
 userdom_user_tmp_filetrans(flatpak_domain, flatpak_user_tmp_t, { dir fifo_file file lnk_file sock_file })
 
-accountsd_dbus_chat(flatpak_domain)
-
 optional_policy(`
 	gen_require(`
 		role unconfined_r;
@@ -197,6 +195,24 @@ optional_policy(`
 ')
 
 optional_policy(`
+	gen_require(`
+		attribute session_bus_type;
+	')
+
+	list_dirs_pattern(session_bus_type, flatpak_lib_type, flatpak_lib_type)
+	read_files_pattern(session_bus_type, flatpak_lib_type, flatpak_lib_type)
+	read_lnk_files_pattern(session_bus_type, flatpak_lib_type, flatpak_lib_type)
+	watch_dirs_pattern(session_bus_type, flatpak_lib_type, flatpak_lib_type)
+
+	list_dirs_pattern(session_bus_type, flatpak_var_home_t, flatpak_var_home_t)
+	rw_files_pattern(session_bus_type, flatpak_var_home_t, flatpak_var_home_t)
+')
+
+optional_policy(`
+	accountsd_dbus_chat(flatpak_domain)
+')
+
+optional_policy(`
 	cups_stream_connect(flatpak_domain)
 ')
 
@@ -227,11 +243,22 @@ optional_policy(`
 ')
 
 optional_policy(`
+	pcscd_stream_connect(flatpak_domain)
+')
+
+optional_policy(`
 	policykit_dbus_chat(flatpak_domain)
 ')
 
 optional_policy(`
 	rtkit_scheduled(flatpak_domain)
+')
+
+optional_policy(`
+	gen_require(`
+		type ssh_agent_tmp_t;
+	')
+	allow flatpak_domain ssh_agent_tmp_t:sock_file getattr;
 ')
 
 optional_policy(`
@@ -245,34 +272,6 @@ optional_policy(`
 
 optional_policy(`
 	systemd_homed_stream_connect(flatpak_domain)
-')
-
-optional_policy(`
-	gen_require(`
-		type pcscd_var_run_t;
-	')
-	allow flatpak_domain pcscd_var_run_t:sock_file getattr;
-')
-
-optional_policy(`
-	gen_require(`
-		type ssh_agent_tmp_t;
-	')
-	allow flatpak_domain ssh_agent_tmp_t:sock_file getattr;
-')
-
-optional_policy(`
-	gen_require(`
-		attribute session_bus_type;
-	')
-
-	list_dirs_pattern(session_bus_type, flatpak_lib_type, flatpak_lib_type)
-	read_files_pattern(session_bus_type, flatpak_lib_type, flatpak_lib_type)
-	read_lnk_files_pattern(session_bus_type, flatpak_lib_type, flatpak_lib_type)
-	watch_dirs_pattern(session_bus_type, flatpak_lib_type, flatpak_lib_type)
-
-	list_dirs_pattern(session_bus_type, flatpak_var_home_t, flatpak_var_home_t)
-	rw_files_pattern(session_bus_type, flatpak_var_home_t, flatpak_var_home_t)
 ')
 
 # allow trivalent to interface with flatpaks (necessary for keepassxc extension, for example)
