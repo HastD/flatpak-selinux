@@ -44,6 +44,8 @@ userdom_user_tmp_content(flatpak_user_tmp_t)
 
 allow flatpak_domain self:process { ptrace setcap setsched };
 allow flatpak_domain self:user_namespace create;
+# Necessary to allow mounting and unmounting FUSE filesystems via fusermount.
+allow flatpak_domain self:capability sys_admin;
 # This grants capabilities only inside the user namespaces managed by flatpak;
 # flatpak itself still runs as an unprivileged user process. See the section on
 # capabilities in user_namespace(7) for details.
@@ -72,6 +74,7 @@ mmap_rw_files_pattern(flatpak_domain, flatpak_tmpfs_t, flatpak_tmpfs_t)
 manage_dirs_pattern(flatpak_domain, flatpak_cache_home_t, flatpak_cache_home_t)
 manage_files_pattern(flatpak_domain, flatpak_cache_home_t, flatpak_cache_home_t)
 manage_lnk_files_pattern(flatpak_domain, flatpak_cache_home_t, flatpak_cache_home_t)
+mmap_rw_files_pattern(flatpak_domain, flatpak_cache_home_t, flatpak_cache_home_t)
 
 manage_dirs_pattern(flatpak_domain, flatpak_var_home_t, flatpak_var_home_t)
 manage_files_pattern(flatpak_domain, flatpak_var_home_t, flatpak_var_home_t)
@@ -120,20 +123,29 @@ files_manage_generic_tmp_dirs(flatpak_domain)
 files_manage_generic_tmp_files(flatpak_domain)
 files_rw_generic_tmp_sockets(flatpak_domain)
 files_mounton_non_security(flatpak_domain)
-files_var_lib_filetrans(flatpak_domain, flatpak_var_lib_t, { file dir })
+files_var_lib_filetrans(domain, flatpak_var_lib_t, dir, "flatpak")
+files_var_lib_filetrans(flatpak_domain, flatpak_var_lib_t, { dir fifo_file file lnk_file sock_file })
 files_tmp_filetrans(flatpak_domain, flatpak_tmpfs_t, { dir fifo_file file lnk_file sock_file })
 
 fs_getattr_all_fs(flatpak_domain)
+fs_manage_fusefs_dirs(flatpak_domain)
+fs_manage_fusefs_files(flatpak_domain)
+fs_manage_fusefs_symlinks(flatpak_domain)
+fs_mmap_fusefs_files(flatpak_domain)
 fs_mount_all_fs(flatpak_domain)
-fs_unmount_all_fs(flatpak_domain)
-fs_remount_all_fs(flatpak_domain)
 fs_read_nsfs_files(flatpak_domain)
+fs_remount_all_fs(flatpak_domain)
 fs_tmpfs_filetrans(flatpak_domain, flatpak_tmpfs_t, { dir fifo_file file lnk_file sock_file })
+fs_unmount_all_fs(flatpak_domain)
+
+storage_rw_fuse(flatpak_domain)
 
 auth_read_passwd(flatpak_domain)
 
 miscfiles_read_all_certs(flatpak_domain)
 miscfiles_watch_localization_dirs(flatpak_domain)
+
+mount_exec_fusermount(flatpak_domain)
 
 sysnet_dns_name_resolve(flatpak_domain)
 
@@ -224,6 +236,13 @@ optional_policy(`
 ')
 
 optional_policy(`
+	gen_require(`
+		type flatpak_helper_t;
+	')
+	allow flatpak_domain flatpak_helper_t:unix_stream_socket rw_stream_socket_perms;
+')
+
+optional_policy(`
 	gnome_manage_home_config(flatpak_domain)
 	gnome_map_generic_data_home_files(flatpak_domain)
 	gnome_read_generic_data_home_files(flatpak_domain)
@@ -263,6 +282,7 @@ optional_policy(`
 
 optional_policy(`
 	systemd_dbus_chat_logind(flatpak_domain)
+	systemd_dbus_chat_localed(flatpak_domain)
 	systemd_machined_stream_connect(flatpak_domain)
 	systemd_resolved_read_pid(flatpak_domain)
 	systemd_resolved_watch_pid_dirs(flatpak_domain)

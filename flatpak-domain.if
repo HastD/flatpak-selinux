@@ -112,7 +112,11 @@ interface(`flatpak_run',`
 	flatpak_domtrans($1_t, $1_flatpak_t)
 	flatpak_generic_app_domtrans($1_flatpak_t, $3)
 
-	allow $1_t $1_flatpak_t:process signal_perms;
+	allow $1_t $1_flatpak_t:process { signal_perms getpgid };
+	tunable_policy(`deny_ptrace',`',`
+		allow $1_t $1_flatpak_t:process ptrace;
+	')
+	allow $1_t $1_flatpak_t:file rw_file_perms;
 
 	allow $3 $1_flatpak_t:process signal_perms;
 	allow $3 $1_flatpak_t:unix_stream_socket { server_stream_socket_perms connectto };
@@ -130,6 +134,8 @@ interface(`flatpak_run',`
 	mmap_rw_files_pattern($3, flatpak_tmpfs_t, flatpak_tmpfs_t)
 	read_files_pattern($3, $1_flatpak_t, $1_flatpak_t)
 	write_fifo_files_pattern($3, $1_flatpak_t, $1_flatpak_t)
+
+	exec_flatpak_apps($3)
 ')
 
 ########################################
@@ -194,6 +200,7 @@ interface(`manage_flatpak_apps',`
 	manage_dirs_pattern($1, flatpak_lib_type, flatpak_lib_type)
 	manage_files_pattern($1, flatpak_lib_type, flatpak_lib_type)
 	manage_lnk_files_pattern($1, flatpak_lib_type, flatpak_lib_type)
+	mmap_rw_files_pattern($1, flatpak_lib_type, flatpak_lib_type)
 	list_dirs_pattern($1, flatpak_tmpfs_t, flatpak_tmpfs_t)
 ')
 
